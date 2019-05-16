@@ -1,12 +1,5 @@
 #include "field.h"
 
-struct gElem
-{
-    int type; //0 - dot, 1 - line
-    QPointF p1;
-    QPointF p2;
-};
-
 Field::Field(QWidget *parent) : QGraphicsView(parent)
 {
     this->sz = new QSize(500,500);
@@ -25,7 +18,7 @@ Field::Field(QWidget *parent) : QGraphicsView(parent)
     dotLinePen.setWidth(dotPen.width()+1);
     dotLinePen.setColor(Qt::red);
 
-    QVector <gElem> gameArr;
+
 
     scene = new QGraphicsScene();
 
@@ -79,26 +72,29 @@ void Field::redrawGrid()
         scene->removeItem(i);
     }
 
+    int xds = (xshift - (int)xshift) * sizeFactor;
+    int yds = (yshift - (int)yshift) * sizeFactor;
+
     for(int i = -gridSize.width(); i <= 2*gridSize.width(); i++)
     {
-        if(i == xshift)
+        if(i == (int)xshift)
         {
-            group_hline->addToGroup(scene->addLine(i*sizeFactor, -2*gridSize.width()*sizeFactor, i*sizeFactor, 2*gridSize.width()*sizeFactor, gridFatPen));
+            group_hline->addToGroup(scene->addLine(i*sizeFactor + xds, -2*gridSize.width()*sizeFactor - yds, i*sizeFactor + xds, 2*gridSize.width()*sizeFactor - yds, gridFatPen));
             group_hline->childItems().last()->setZValue(2);
         }
         else
-            group_hline->addToGroup(scene->addLine(i*sizeFactor, -2*gridSize.width()*sizeFactor, i*sizeFactor, 2*gridSize.width()*sizeFactor, gridPen));
+            group_hline->addToGroup(scene->addLine(i*sizeFactor + xds, -2*gridSize.width()*sizeFactor - yds, i*sizeFactor + xds, 2*gridSize.width()*sizeFactor - yds, gridPen));
     }
 
     for(int j = -gridSize.height(); j <= 2*gridSize.height(); j++)
     {
-        if(mxGridSize.height()/2 - j == yshift)
+        if(mxGridSize.height()/2 - j == (int)yshift)
         {
-            group_vline->addToGroup(scene->addLine(-2*gridSize.height()*sizeFactor, j*sizeFactor, 2*gridSize.height()*sizeFactor, j*sizeFactor, gridFatPen));
+            group_vline->addToGroup(scene->addLine(-2*gridSize.height()*sizeFactor + xds, j*sizeFactor - yds, 2*gridSize.height()*sizeFactor + xds, j*sizeFactor - yds, gridFatPen));
             group_vline->childItems().last()->setZValue(2);
         }
         else
-            group_vline->addToGroup(scene->addLine(-2*gridSize.height()*sizeFactor, j*sizeFactor, 2*gridSize.height()*sizeFactor, j*sizeFactor, gridPen));
+            group_vline->addToGroup(scene->addLine(-2*gridSize.height()*sizeFactor + xds, j*sizeFactor - yds, 2*gridSize.height()*sizeFactor + xds, j*sizeFactor - yds, gridPen));
     }
 }
 
@@ -355,7 +351,7 @@ void Field::undo()
 void Field::load()
 {
     QString fileName = QFileDialog::getOpenFileName(this,
-        tr("Открыть чертеж"), QDir::homePath(), tr("Файл Чертежа (*.cbf)"));
+        tr("Открыть чертеж (редактирование)"), QDir::homePath(), tr("Файл Чертежа (*.cbf)"));
     if(fileName == "")
     {
         QMessageBox::warning(this, tr("Внимание!"),
@@ -369,6 +365,11 @@ void Field::load()
         loadFromFile();
         renameRootWindow();
     }
+}
+
+void Field::game()
+{
+    loadGameFile(QFileDialog::getOpenFileName(this, tr("Открыть чертеж"), QDir::homePath(), tr("Файл Чертежа (*.cbf)")));
 }
 
 void Field::exit()
@@ -400,7 +401,6 @@ void Field::loadFromFile()
     qDebug() << file;
     if ((file.exists())&&(file.open(QIODevice::ReadOnly)))
     {
-        qDebug() << "Works";
         QTextStream fin(&file);
         int tmp;
         fin >> tmp;
@@ -415,10 +415,42 @@ void Field::loadFromFile()
         {
             int x, y, type;
             fin >> type >> x >> y;
-            //qDebug() << x << " " << y;
-            //"X:" = (round(x/sizeFactor - xshift)) " Y:" = (round((mxGridSize.height()*sizeFactor/2 - y)/sizeFactor - yshift))
             if(type == 0)
                 addDot((x+xshift)*sizeFactor, this->sz->height() - (y+yshift)*sizeFactor);
+            if(type == 1)
+            {
+                int x2, y2;
+                fin >> x2 >> y2;
+                addLine((x+xshift)*sizeFactor, this->sz->height() - (y+yshift)*sizeFactor, (x2+xshift)*sizeFactor, sz->height() - (y2+yshift)*sizeFactor);
+            }
+        }
+    }
+    file.close();
+}
+
+void Field::loadGameFile(QString gameFilename)
+{
+
+    QFile file(gameFilename);
+    qDebug() << file << " -game";
+    if ((file.exists())&&(file.open(QIODevice::ReadOnly)))
+    {
+        QTextStream fin(&file);
+        int tmp;
+        fin >> tmp;
+        gridSize.setHeight(tmp);
+        fin >> tmp;
+        gridSize.setWidth(tmp);
+        recalcSizeFac();
+
+        fin >> tmp; //n of dots
+        qDebug() << tmp;
+        for(int i = 0; i < tmp; i++)
+        {
+            int x, y, type;
+            fin >> type >> x >> y;
+            if(type == 0)
+
             if(type == 1)
             {
                 int x2, y2;
@@ -519,22 +551,27 @@ void Field::mouseMoveEvent(QMouseEvent *e)
         if(e->pos() != last_mPos)
         {
             QPointF dir = QPointF(e->pos().x() - last_mPos.x(), e->pos().y() - last_mPos.y());
-            if(dir.x() > sizeFactor/5 && abs(xshift + 1) >= gridSize.width()/16)
-                xshift += 1;
+            if(dir.x() + gridSize.width()/sizeFactor > gridSize.width()/sizeFactor)
+                xshift += gridSize.width()/sizeFactor/5;
             else
             {
-                if(-dir.x() > sizeFactor/5 && abs(xshift - 1) >= gridSize.width()/16)
-                    xshift -= 1;
+                if(-dir.x() - gridSize.width()/sizeFactor > gridSize.width()/sizeFactor)
+                    xshift -= gridSize.width()/sizeFactor/5;
             }
 
-            if(dir.y() > sizeFactor/5 && abs(yshift - 1) >= gridSize.height()/16)
-                yshift -= 1;
+            if(dir.y() + gridSize.height()/sizeFactor > gridSize.height()/sizeFactor)
+                yshift -= gridSize.height()/sizeFactor/5;
             else
             {
-                if(-dir.y() > sizeFactor/5 && abs(yshift + 1) >= gridSize.height()/16)
-                    yshift += 1;
+                if(-dir.y() - gridSize.height()/sizeFactor > gridSize.height()/sizeFactor)
+                    yshift += gridSize.height()/sizeFactor/5;
             }
-            qDebug() << "DIR: " << dir;
+            if(xshift > mxXshift) xshift = mxXshift;
+            if(xshift < -mxXshift) xshift = -mxXshift;
+
+            if(xshift > mxYshift) xshift = mxYshift;
+            if(xshift < -mxYshift) xshift = -mxYshift;
+            qDebug() << "pos: " << xshift << " | " << yshift;
             recalcSizeFac();
             last_mPos = e->pos();
         }
@@ -671,8 +708,8 @@ void Field::recalcDots()
         double x1, y1;
         if(dot)
         {
-            x1 = round(1.0*dot->pos().x() / oldSizeFactor - oldxshift) * sizeFactor;
-            y1 = round(1.0*dot->pos().y() / oldSizeFactor + oldyshift) * sizeFactor;
+            x1 = round((1.0*dot->pos().x() / oldSizeFactor) - oldxshift) * sizeFactor;
+            y1 = round((1.0*dot->pos().y() / oldSizeFactor) + oldyshift) * sizeFactor;
             //qDebug() << dot->pos().y() << " " << round(1.0*dot->pos().y() / oldSizeFactor * sizeFactor);
             group_figure_tmp->addToGroup(scene->addEllipse(-5, -5, 5+sizeFactor/4, 5+sizeFactor/4, dotPen, dotBrush));
             group_figure_tmp->childItems().last()->setPos(x1 + xshift*sizeFactor, y1 - yshift*sizeFactor);
@@ -680,8 +717,8 @@ void Field::recalcDots()
         if(line)
         {
             double x2, y2;
-            x1 = round(1.0*line->pos().x() / oldSizeFactor - oldxshift) * sizeFactor;
-            y1 = round(1.0*line->pos().y() / oldSizeFactor + oldyshift) * sizeFactor;
+            x1 = round((1.0*line->pos().x() / oldSizeFactor) - oldxshift) * sizeFactor;
+            y1 = round((1.0*line->pos().y() / oldSizeFactor) + oldyshift) * sizeFactor;
             x2 = round(1.0*line->line().p2().x() / oldSizeFactor * sizeFactor);
             y2 = round(1.0*line->line().p2().y() / oldSizeFactor * sizeFactor);
             group_figure_tmp->addToGroup(scene->addLine(0, 0, x2, y2, dotLinePen));

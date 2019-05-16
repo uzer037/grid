@@ -16,6 +16,17 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     this->setWindowTitle("Координатная Плоскость");
     connect(ui->graphicsView,SIGNAL(resized()), this, SLOT(subwindowResized()));
+
+    openMenu = new QMenu("Открыть для...");
+    QAction* openAsDraw = new QAction("Построение");
+    QAction* openAsEdit = new QAction("Редактирование");
+    connect(openAsEdit, SIGNAL(triggered()), ui->graphicsView, SLOT(load()));
+    connect(openAsEdit, SIGNAL(triggered()), ui->graphicsView, SLOT(game()));
+    openMenu->addAction(openAsDraw);
+    openMenu->addAction(openAsEdit);
+    ui->openBtn->setMenu(openMenu);
+
+
     connect(this, SIGNAL(ui->graphicsView->renameRootWindow()), SLOT(this->renameWindow("Координатная плоскость - " + ui->graphicsView->getFilename()))); //updating header name
     ui->graphicsView->setShift(0,0);
     ui->graphicsView->gridSize = this->gridSize;
@@ -84,7 +95,7 @@ void MainWindow::updateCoord(int x, int y)
 
 void MainWindow::updateLastCoord(int x, int y)
 {
-    ui->CursorPos->setText("Последняя точка: X=" + QString::number(x) + ", Y=" + QString::number(y));
+    ui->CursorPos->setText("Последняя точка:\nX=" + QString::number(x) + ", Y=" + QString::number(y));
 }
 
 // // // // // // // // // // // // //
@@ -122,7 +133,7 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
 
         if(e->key() == Qt::Key_N)
         {
-            if(QMessageBox::Yes == QMessageBox(QMessageBox::Information, "Внимание!!!", "Вы хотите очистить поле?", QMessageBox::No|QMessageBox::Yes).exec())
+            if(QMessageBox::Yes == QMessageBox(QMessageBox::Information, "Внимание!!!", "Вы хотите очистить поле?", QMessageBox::Yes|QMessageBox::No).exec())
             {
                 ui->graphicsView->clearDots();
                 ui->CursorPos->setText("Точки не заданы");

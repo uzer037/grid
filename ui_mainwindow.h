@@ -188,6 +188,7 @@ public:
         sizePolicy1.setHeightForWidth(openBtn->sizePolicy().hasHeightForWidth());
         openBtn->setSizePolicy(sizePolicy1);
         openBtn->setMinimumSize(QSize(0, 30));
+        openBtn->setContextMenuPolicy(Qt::DefaultContextMenu);
         openBtn->setFlat(true);
 
         horizontalLayout->addWidget(openBtn);
@@ -295,7 +296,8 @@ public:
         clearButton->setGeometry(QRect(10, 260, 91, 31));
         CursorPos = new QLabel(tab);
         CursorPos->setObjectName(QString::fromUtf8("CursorPos"));
-        CursorPos->setGeometry(QRect(60, 150, 121, 17));
+        CursorPos->setGeometry(QRect(40, 150, 161, 31));
+        CursorPos->setAlignment(Qt::AlignCenter);
         groupBox = new QGroupBox(tab);
         groupBox->setObjectName(QString::fromUtf8("groupBox"));
         groupBox->setGeometry(QRect(0, 320, 221, 151));

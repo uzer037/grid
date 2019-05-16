@@ -11,11 +11,18 @@
 #include <QMessageBox>
 #include <QApplication>
 
+struct gElem
+{
+    int type; //0 - dot, 1 - line
+    QPointF p1;
+    QPointF p2;
+};
+
 class Field : public QGraphicsView
 {
     Q_OBJECT
 public:
-    Field(QWidget *parent = 0);
+    Field(QWidget *parent = nullptr);
     ~Field();
     QGraphicsItem *getLastDot();
 
@@ -47,7 +54,10 @@ public:
     void setShift(int x, int y);
     void undo();
     void save();
+public slots:
     void load();
+    void game();
+public:
     void exit();
     void nlinepos(int x1, int y1, int x2, int y2);
 
@@ -67,6 +77,8 @@ private:
 
     void loadFromFile();
     void saveToFile();
+    void loadGameFile(QString gameFilename);
+
     QString filename;
     bool closedLoop = 1;
     bool showingCross = 0;
@@ -75,14 +87,18 @@ private:
     double sizeFactor = 20;
     double oldSizeFactor = 20;
 
-    int xshift = 0, yshift = 0;
-    int oldxshift = 0, oldyshift = 0;
+    double xshift = 0, yshift = 0;
+    double mxXshift = 50, mxYshift = 50;
+    double oldxshift = 0, oldyshift = 0;
 
     void redrawGrid();
     void redrawDots();
     void recalcDots();
     void redrawCoord(int x, int y);
     void hideCoord();
+
+    QVector <gElem> gameArr;
+    bool gameMode = 0;
 
     QGraphicsScene *scene;
     QGraphicsItemGroup *group_hline;

@@ -6,6 +6,7 @@
 #include <QGraphicsView>
 #include <QColorDialog>
 #include <QKeyEvent>
+#include <QMenu>
 #include <cmath>
 
 namespace Ui {
@@ -30,6 +31,9 @@ public:
     QSize mnGridSize =  QSize(2,2);
     QSize mxGridSize =  QSize(50,50);
 
+private:
+    QMenu* openMenu;
+
 public slots:
     void subwindowResized();
     void renameWindow(QString newName);
@@ -39,7 +43,6 @@ private slots:
     void mousePressEvent(QMouseEvent *e);
     void keyPressEvent(QKeyEvent *e);
     void resizeEvent(QResizeEvent *e);
-
 
     void on_addDotBtn_clicked();
     void updateCoord(int x, int y);
