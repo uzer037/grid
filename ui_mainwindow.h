@@ -55,6 +55,8 @@ public:
     QPushButton *clearButton;
     QLabel *CursorPos;
     QGroupBox *groupBox;
+    QLabel *gameString;
+    QLabel *gameTimerTxt;
     QWidget *tab_2;
     QCheckBox *aim_Checkbox;
     QPushButton *gridColorBtn;
@@ -297,10 +299,18 @@ public:
         CursorPos = new QLabel(tab);
         CursorPos->setObjectName(QString::fromUtf8("CursorPos"));
         CursorPos->setGeometry(QRect(40, 150, 161, 31));
-        CursorPos->setAlignment(Qt::AlignCenter);
+        CursorPos->setAlignment(Qt::AlignHCenter|Qt::AlignTop);
         groupBox = new QGroupBox(tab);
         groupBox->setObjectName(QString::fromUtf8("groupBox"));
         groupBox->setGeometry(QRect(0, 320, 221, 151));
+        gameString = new QLabel(groupBox);
+        gameString->setObjectName(QString::fromUtf8("gameString"));
+        gameString->setGeometry(QRect(0, 30, 221, 91));
+        gameString->setAlignment(Qt::AlignHCenter|Qt::AlignTop);
+        gameTimerTxt = new QLabel(groupBox);
+        gameTimerTxt->setObjectName(QString::fromUtf8("gameTimerTxt"));
+        gameTimerTxt->setGeometry(QRect(0, 130, 211, 17));
+        gameTimerTxt->setAlignment(Qt::AlignCenter);
         tabWidget->addTab(tab, QString());
         tab_2 = new QWidget();
         tab_2->setObjectName(QString::fromUtf8("tab_2"));
@@ -387,6 +397,8 @@ public:
         clearButton->setText(QApplication::translate("MainWindow", "\320\236\321\207\320\270\321\201\321\202\320\270\321\202\321\214", nullptr));
         CursorPos->setText(QApplication::translate("MainWindow", "\320\242\320\276\321\207\320\272\320\270 \320\275\320\265 \320\267\320\260\320\264\320\260\320\275\321\213", nullptr));
         groupBox->setTitle(QApplication::translate("MainWindow", "\320\241\320\273\320\265\320\264\321\203\321\211\320\260\321\217 \321\202\320\276\321\207\320\272\320\260", nullptr));
+        gameString->setText(QApplication::translate("MainWindow", "TextLabel", nullptr));
+        gameTimerTxt->setText(QApplication::translate("MainWindow", "00:00", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tab), QApplication::translate("MainWindow", "\320\232\320\276\320\276\321\200\320\264\320\270\320\275\320\260\321\202\321\213", nullptr));
         aim_Checkbox->setText(QApplication::translate("MainWindow", "\320\232\320\276\320\276\321\200\320\264\320\270\320\275\320\260\321\202\320\275\320\276\320\265\n"
 "\320\277\320\265\321\200\320\265\320\272\321\200\320\265\321\201\321\202\320\270\320\265", nullptr));

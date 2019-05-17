@@ -7,6 +7,7 @@
 #include <QColorDialog>
 #include <QKeyEvent>
 #include <QMenu>
+#include <QTimer>
 #include <cmath>
 
 namespace Ui {
@@ -33,10 +34,17 @@ public:
 
 private:
     QMenu* openMenu;
+    QTimer *gameTimer;
+    int gameTimerNum = 0;
 
 public slots:
     void subwindowResized();
     void renameWindow(QString newName);
+    void updGStrTxt();
+
+    void gameTimerStart();
+    void gameTimerTrigger();
+    void gameTimerStop();
 
 private slots:
 

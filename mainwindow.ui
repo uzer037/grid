@@ -922,7 +922,7 @@
         <string>Точки не заданы</string>
        </property>
        <property name="alignment">
-        <set>Qt::AlignCenter</set>
+        <set>Qt::AlignHCenter|Qt::AlignTop</set>
        </property>
       </widget>
       <widget class="QGroupBox" name="groupBox">
@@ -937,6 +937,38 @@
        <property name="title">
         <string>Следущая точка</string>
        </property>
+       <widget class="QLabel" name="gameString">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>30</y>
+          <width>221</width>
+          <height>91</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignHCenter|Qt::AlignTop</set>
+        </property>
+       </widget>
+       <widget class="QLabel" name="gameTimerTxt">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>130</y>
+          <width>211</width>
+          <height>17</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>00:00</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
       </widget>
      </widget>
      <widget class="QWidget" name="tab_2">

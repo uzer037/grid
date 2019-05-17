@@ -15,16 +15,25 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowTitle("Координатная Плоскость");
-    connect(ui->graphicsView,SIGNAL(resized()), this, SLOT(subwindowResized()));
+    connect(ui->graphicsView, SIGNAL(resized()), this, SLOT(subwindowResized()));
+    connect(ui->graphicsView, SIGNAL(gPrintStr()), this, SLOT(updGStrTxt()));
+    updGStrTxt();
 
     openMenu = new QMenu("Открыть для...");
     QAction* openAsDraw = new QAction("Построение");
     QAction* openAsEdit = new QAction("Редактирование");
     connect(openAsEdit, SIGNAL(triggered()), ui->graphicsView, SLOT(load()));
-    connect(openAsEdit, SIGNAL(triggered()), ui->graphicsView, SLOT(game()));
+    connect(openAsDraw, SIGNAL(triggered()), ui->graphicsView, SLOT(game()));
     openMenu->addAction(openAsDraw);
     openMenu->addAction(openAsEdit);
     ui->openBtn->setMenu(openMenu);
+
+
+    gameTimer = new QTimer();
+    gameTimer->setInterval(1000);
+    connect(this->gameTimer, SIGNAL(timeout()), this, SLOT(gameTimerTrigger()));
+    connect(ui->graphicsView, SIGNAL(gTimeStart()), this, SLOT(gameTimerStart()));
+    connect(ui->graphicsView, SIGNAL(gTimeStop()), this, SLOT(gameTimerStop()));
 
 
     connect(this, SIGNAL(ui->graphicsView->renameRootWindow()), SLOT(this->renameWindow("Координатная плоскость - " + ui->graphicsView->getFilename()))); //updating header name
@@ -136,6 +145,10 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
             if(QMessageBox::Yes == QMessageBox(QMessageBox::Information, "Внимание!!!", "Вы хотите очистить поле?", QMessageBox::Yes|QMessageBox::No).exec())
             {
                 ui->graphicsView->clearDots();
+                if(ui->graphicsView->gameMode)
+                {
+                    ui->graphicsView->gameLoop();
+                }
                 ui->CursorPos->setText("Точки не заданы");
             }
         }
@@ -307,4 +320,43 @@ void MainWindow::on_yScroll_valueChanged(int value)
     yshift = value/10-1;
     ui->graphicsView->setShift(xshift,yshift);
     ui->graphicsView->recalcSizeFac();
+}
+
+void MainWindow::updGStrTxt()
+{
+    ui->gameString->setText(ui->graphicsView->gStrToPrint);
+}
+
+void MainWindow::gameTimerStart()
+{
+    gameTimerNum = 0;
+    gameTimer->start();
+}
+
+void MainWindow::gameTimerTrigger()
+{
+    gameTimerNum++;
+    QString txt = "";
+    if(gameTimerNum / 60 <= 9) txt+= "0";
+    txt += QString::number(gameTimerNum / 60);
+    txt+= ":";
+    if(gameTimerNum % 60 <= 9) txt+= "0";
+    txt += QString::number(gameTimerNum % 60);
+    ui->gameTimerTxt->setText(txt);
+}
+
+void MainWindow::gameTimerStop()
+{
+    gameTimer->stop();
+
+    QString txt = "";
+    if(gameTimerNum / 60 <= 9) txt+= "0";
+    txt += QString::number(gameTimerNum / 60);
+    txt+= ":";
+    if(gameTimerNum % 60 <= 9) txt+= "0";
+    txt += QString::number(gameTimerNum % 60);
+
+    QMessageBox::information(this,"Поздравляем!", ("Чертеж построен!\nПотраченое время: " + txt));
+    ui->gameTimerTxt->setText("00:00");
+
 }

@@ -162,7 +162,7 @@ void Field::nlinepos(int x1, int y1, int x2, int y2)
     newLine = scene->addLine(x1,y1,x2,y2,dotLinePen);
 }
 
-void Field::addDot(int x, int y)
+void Field::addDot(double x, double y)
 {
     bool make = true;
     for(auto i : group_figure->childItems())
@@ -174,6 +174,9 @@ void Field::addDot(int x, int y)
     }
     if(make)
     {
+        int xds = (xshift - (int)xshift) * sizeFactor;
+        int yds = (yshift - (int)yshift) * sizeFactor;
+
         group_figure->addToGroup(scene->addEllipse(-5, -5, 10, 10, dotPen, dotBrush));
         group_figure->childItems().last()->setPos(x,y);
         if(showingLines && group_figure->childItems().size() > 1)
@@ -346,6 +349,10 @@ void Field::undo()
         hideLines();
         showLines();
     }
+    if(gameMode)
+    {
+        gameLoop();
+    }
 }
 
 void Field::load()
@@ -369,7 +376,122 @@ void Field::load()
 
 void Field::game()
 {
+    clearDots();
     loadGameFile(QFileDialog::getOpenFileName(this, tr("Открыть чертеж"), QDir::homePath(), tr("Файл Чертежа (*.cbf)")));
+    gameMode = 1;
+    gTimeStart();
+    gameLoop();
+}
+
+bool Field::compPoints_or(QPointF p1, QPointF p2)
+{
+    return (round(p1.x()/sizeFactor - xshift) != (int)p2.x() || round(p1.y()/sizeFactor) - (int)yshift - 1 != (int)p2.y());
+}
+bool Field::compPoints_and(QPointF p1, QPointF p2)
+{
+    return (round(p1.x()/sizeFactor - xshift) == (int)p2.x() && round(p1.y()/sizeFactor) - (int)yshift - 1 == (int)p2.y());
+}
+
+void Field::gameCheck()
+{
+    int n = group_figure->childItems().size()-1;
+    if(n > 0 && group_figure->childItems().size() > 0 && gameArr.size() > 0 && n < gameArr.size())
+    {
+        QGraphicsEllipseItem* dot = dynamic_cast<QGraphicsEllipseItem *>(group_figure->childItems()[n]);
+
+        //QGraphicsLineItem* line = dynamic_cast<QGraphicsLineItem *>(group_figure->childItems()[n]);
+        //if(line) foundLine = 1;
+
+        if(n >= 2)
+        {
+            QGraphicsLineItem* line = dynamic_cast<QGraphicsLineItem *>(group_figure->childItems()[n-2]);
+            if(line)
+            {
+                qDebug() << "a----------------a-------------a--------a-a-a-";
+                if(gameArr[n-2].type == 1)
+                {
+                    qDebug() << "b------------------b----------b------b-b-b-b";
+                    qDebug() << line->pos()/sizeFactor << " " << gameArr[n].p1 << " " << line->line().p2()/sizeFactor << " " << gameArr[n-1].p1;
+                    if(!compPoints_and(line->pos()/sizeFactor,gameArr[n].p1) || !compPoints_and(line->line().p2()/sizeFactor,gameArr[n-1].p1) || !compPoints_and(line->pos()/sizeFactor,gameArr[n].p1) || !compPoints_and(line->line().p2()/sizeFactor,gameArr[n-1].p1))
+                    {
+                        //undo();
+                    }
+                }
+                else
+                {
+                    qDebug() << "c---------------------c-----------c-------c--c-c";
+                    undo();
+                }
+            }
+        }
+
+        if(dot)
+        {
+            qDebug() << round(dot->pos().x()/sizeFactor - xshift) - (int)gameArr[n].p1.x() << " " << round(dot->pos().y()/sizeFactor) - (int)yshift - (int)gameArr[n].p1.y();
+            if(gameArr[n].type != 0 || !compPoints_and(dot->pos(),gameArr[n].p1))
+            {
+
+//                if(gameArr[n].type == 0 && gameArr.size() >=3 && (gameArr[n-2].type == 1 || gameArr[n-1].type == 1))
+//                {qDebug() << "donea";}
+//                else
+//                    undo();
+//                qDebug() << "doneb";
+            }
+            else
+            {
+                if(gameArr[n].type == 0 && gameArr.size() >=3 && (gameArr[n-2].type == 1 || gameArr[n-1].type == 1))
+                {}
+                else
+                    undo();
+            }
+        }
+    }
+}
+
+void Field::gameLoop()
+{
+    if(gameArr.size() > 0)
+    {
+        int n = group_figure->childItems().size() - 1;
+        if(n < 0) n = 0;
+        if(n >= 0 && (n < group_figure->childItems().size() || group_figure->childItems().size() == 0))
+        {
+            if(n < 0)
+            {
+                n = 0;
+            }
+            if(group_figure->childItems().size() > 0 && group_cross->childItems().size() < gameArr.size())
+                n++;
+            if(n >= gameArr.size()-1)
+            {
+                gStrToPrint = "Режим: Редактирование";
+                gameMode = 0;
+                gTimeStop();
+            }
+            else
+            {
+                gStrToPrint = "Режим: Построение\n\nСледующая ";
+                if(gameArr[n].type == 0)
+                    gStrToPrint += "точка";
+                if(gameArr[n].type == 1)
+                    gStrToPrint += "линия";
+                gStrToPrint += "\nв координатах:\n";
+                gStrToPrint += "(" + QString::number(gameArr[n].p1.x()) + ", " + QString::number(gameArr[n].p1.y()) + ")";
+                if(gameArr[n].type == 1)
+                    gStrToPrint += ", (" + QString::number(gameArr[n].p2.x()) + ", " + QString::number(gameArr[n].p2.y()) + ")";
+            }
+            gPrintStr();
+        }
+        qDebug() << "N: " << n << " sz: " << group_figure->childItems().size();
+        gameCheck();
+        qDebug() << "Done... Smthng2";
+        for(int i = 0; i < gameArr.size(); i++)
+        {
+            QString a = "  ";
+            if(i == group_figure->childItems().size()) a = "->";
+            qDebug() << a << "№" << i << " " << gameArr[i].type << " " << gameArr[i].p1 << " " << gameArr[i].p2;
+        }
+    }
 }
 
 void Field::exit()
@@ -438,25 +560,33 @@ void Field::loadGameFile(QString gameFilename)
         QTextStream fin(&file);
         int tmp;
         fin >> tmp;
-        gridSize.setHeight(tmp);
+        //gridSize.setHeight(tmp);
         fin >> tmp;
-        gridSize.setWidth(tmp);
+        //gridSize.setWidth(tmp);
         recalcSizeFac();
 
         fin >> tmp; //n of dots
-        qDebug() << tmp;
+        gameArr.clear();
+        gElem obj;
         for(int i = 0; i < tmp; i++)
         {
             int x, y, type;
             fin >> type >> x >> y;
-            if(type == 0)
+
+            obj.type = type;
+            obj.p1 = QPointF(x,y);
+
 
             if(type == 1)
             {
-                int x2, y2;
-                fin >> x2 >> y2;
-                addLine((x+xshift)*sizeFactor, this->sz->height() - (y+yshift)*sizeFactor, (x2+xshift)*sizeFactor, sz->height() - (y2+yshift)*sizeFactor);
+                fin >> x >> y;
+                obj.p2 = QPointF(x,y);
             }
+            else
+            {
+                obj.p2 = QPointF(0,0);
+            }
+            gameArr.push_back(obj);
         }
     }
     file.close();
@@ -550,28 +680,51 @@ void Field::mouseMoveEvent(QMouseEvent *e)
    {
         if(e->pos() != last_mPos)
         {
+            double sens = 16;
             QPointF dir = QPointF(e->pos().x() - last_mPos.x(), e->pos().y() - last_mPos.y());
-            if(dir.x() + gridSize.width()/sizeFactor > gridSize.width()/sizeFactor)
-                xshift += gridSize.width()/sizeFactor/5;
+
+            if(dir.x() > gridSize.width()/sens)
+            {
+                     xshift +=0.25;
+                    //xshift += gridSize.width()/sizeFactor/sens;
+            }
             else
             {
-                if(-dir.x() - gridSize.width()/sizeFactor > gridSize.width()/sizeFactor)
-                    xshift -= gridSize.width()/sizeFactor/5;
+                if(-dir.x() > gridSize.width()/sens)
+                {
+                        xshift -=0.25;
+                        //xshift -= gridSize.width()/sizeFactor/sens;
+                }
             }
 
-            if(dir.y() + gridSize.height()/sizeFactor > gridSize.height()/sizeFactor)
-                yshift -= gridSize.height()/sizeFactor/5;
+            if(dir.y() > gridSize.height()/sens)
+            {
+                    yshift -=0.25;
+                    //yshift -= gridSize.height()/sizeFactor/sens;
+            }
             else
             {
-                if(-dir.y() - gridSize.height()/sizeFactor > gridSize.height()/sizeFactor)
-                    yshift += gridSize.height()/sizeFactor/5;
+                if(-dir.y() > gridSize.height()/sens)
+                {
+                        yshift +=0.25;
+                        //yshift += gridSize.height()/sizeFactor/sens;
+                }
             }
+
+//            if(dir.y() + gridSize.height()/sizeFactor > gridSize.height()/sizeFactor)
+//                yshift -= gridSize.height()/sizeFactor/sens;
+//            else
+//            {
+//                if(-dir.y() - gridSize.height()/sizeFactor > gridSize.height()/sizeFactor)
+//                    yshift += gridSize.height()/sizeFactor/sens;
+//            }
             if(xshift > mxXshift) xshift = mxXshift;
-            if(xshift < -mxXshift) xshift = -mxXshift;
+            if(-xshift > mxXshift) xshift = -mxXshift;
+            qDebug() << -xshift << " " << mxXshift;
 
-            if(xshift > mxYshift) xshift = mxYshift;
-            if(xshift < -mxYshift) xshift = -mxYshift;
-            qDebug() << "pos: " << xshift << " | " << yshift;
+            if(yshift > mxYshift) yshift = mxYshift;
+            if(-yshift > mxYshift) yshift = -mxYshift;
+            //qDebug() << "pos: " << xshift << " | " << yshift;
             recalcSizeFac();
             last_mPos = e->pos();
         }
@@ -587,6 +740,7 @@ void Field::mousePressEvent(QMouseEvent *e)
     int x;
     int y;
     QPointF lpos = e->localPos();
+
     if(e->button() == Qt::LeftButton)
     {
         x = f_rounded(lpos.x(),sizeFactor);
@@ -608,7 +762,7 @@ void Field::mousePressEvent(QMouseEvent *e)
             lineFlag = 1;
         }
     }
-    else
+    if(lineFlag)
     {
         this->nlinepos(rclkx,rclky,f_rounded(lpos.x(),sizeFactor),f_rounded(lpos.y(),sizeFactor));
     }
@@ -616,7 +770,14 @@ void Field::mousePressEvent(QMouseEvent *e)
 
 void Field::mouseReleaseEvent(QMouseEvent *e)
 {
-   if(e->button() == Qt::LeftButton)
+    if(xshift - (int)xshift != 0 || yshift - (int)yshift != 0)
+    {
+        xshift = round(xshift);
+        yshift = round(yshift);
+        recalcSizeFac();
+    }
+
+    if(e->button() == Qt::LeftButton)
    {
     if(lineFlag)
     {
@@ -627,6 +788,8 @@ void Field::mouseReleaseEvent(QMouseEvent *e)
             QPointF p2 = newLine->line().p2();
 
 
+
+
             qDebug() << p1 << " " << p2;
             if(abs(p1.x() - p2.x()) > 0.35 || abs(p1.y() - p2.y()) > 0.35)
             {
@@ -634,11 +797,18 @@ void Field::mouseReleaseEvent(QMouseEvent *e)
             addLine(p1.x(),p1.y(),p2.x(),p2.y());
 
             addDot(p1.x(),p1.y());
+
             addDot(p2.x(),p2.y());
+            if(gameMode) gameLoop();
             }
             else
             {
                 addDot(p1.x(),p1.y());
+                if(gameMode)
+                {
+                    tryingAt = p1;
+                    gameLoop();
+                }
             }
         }
         else
@@ -652,6 +822,7 @@ void Field::mouseReleaseEvent(QMouseEvent *e)
         scene->removeItem(newLine);
         newLine = nullptr;
     }
+    if(gameMode) gameCheck();
    }
 }
 

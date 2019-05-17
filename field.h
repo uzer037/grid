@@ -37,7 +37,7 @@ public:
 
     double getSizeFactor();
     QString getFilename();
-    void addDot(int x, int y);
+    void addDot(double x, double y);
     void addLine(int x1, int y1, int x2, int y2);
     void setSizeFactor(double sizeFactor);
     void setGridColor(QColor col);
@@ -57,6 +57,12 @@ public:
 public slots:
     void load();
     void game();
+    void gameCheck();
+    void gameLoop();
+    bool compPoints_or(QPointF p1, QPointF p2); //tool for gameCheck()
+    bool compPoints_and(QPointF p1, QPointF p2); //tool for gameCheck()
+
+
 public:
     void exit();
     void nlinepos(int x1, int y1, int x2, int y2);
@@ -66,10 +72,17 @@ public:
     QSize mxGridSize;
     bool showingCoord = 0;
 
+    bool gameMode = 0;
+    QString gStrToPrint = "Режим: Редактирование";
+
     void resizeEvent(QResizeEvent* event);
 signals:
     void resized();
     void renameRootWindow();
+    void gPrintStr();
+
+    void gTimeStart();
+    void gTimeStop();
 
 private:
 
@@ -79,6 +92,7 @@ private:
     void saveToFile();
     void loadGameFile(QString gameFilename);
 
+    bool firstClick = 1;
     QString filename;
     bool closedLoop = 1;
     bool showingCross = 0;
@@ -87,8 +101,11 @@ private:
     double sizeFactor = 20;
     double oldSizeFactor = 20;
 
+    bool foundLine = 0;
+    QPointF tryingAt;
+
     double xshift = 0, yshift = 0;
-    double mxXshift = 50, mxYshift = 50;
+    double mxXshift = 25, mxYshift = 25;
     double oldxshift = 0, oldyshift = 0;
 
     void redrawGrid();
@@ -98,7 +115,6 @@ private:
     void hideCoord();
 
     QVector <gElem> gameArr;
-    bool gameMode = 0;
 
     QGraphicsScene *scene;
     QGraphicsItemGroup *group_hline;
